@@ -9,7 +9,7 @@ class GitesModels extends Database
     private $img_gite;
     private $nbr_chambre;
     private $nbr_sdb;
-    private $zone_geo;
+    private $zone_geo; 
     private $prix;
     private $disponible;
     private $date_arrivee;
@@ -32,16 +32,13 @@ class GitesModels extends Database
                     ?>
                     <div class="col-lg-4 d-flex align-items-stretch">
                         <div class="card mt-3">
-                            <img class="img-fluid" src="<?php echo $row['img_gite'] ?>"
+                            <img class="img-fluid card-img-top" src="<?php echo $row['img_gite'] ?>"
                                  alt="<?php echo $row['nom_gite'] ?>" title="<?php echo $row['nom_gite']; ?>">
-                            <h5 class="font-weight-bold mt-3"> Nom : <?php echo $row['nom_gite'] ?></h5>
-                            <p class="mt-3 lead"><?php echo $row['description_gite'] ?></p>
-                            <h5 class="font-weight-bold mt-3">Prix : <?php echo $row['prix'] ?> EUR</h5>
-                            <h5 class="font-weight-bold mt-3">Nombre de chambre : <?php echo $row['nbr_chambre'] ?></h5>
-                            <h5 class="font-weight-bold mt-3">Nombre de sdb : <?php echo $row['nbr_sdb'] ?></h5>
-                            <h5 class="font-weight-bold mt-3">Type de logement : <?php echo $row['type'] ?></h5>
-                            <a class="btn btn-warning p-3 m-2 font-weight-bold"
-                               href="../reservation.php?id=<?= $row['id'] ?>">Réserver</a>
+                            <h5 class="font-weight-bold mt-3"><?php echo $row['nom_gite'] ?></h5>
+                            <a class="btn btn-outline-warning p-3 m-2 font-weight-bold"
+                               href="reservation.php?id=<?= $row['id'] ?>">Réserver</a>
+                            <a class="btn btn-outline-danger p-3 m-2 font-weight-bold"
+                               href="details_gite.php?id=<?= $row['id'] ?>">Plus d'info</a>
                         </div>
                     </div>
                 <?php
@@ -51,6 +48,7 @@ class GitesModels extends Database
         <?php
     }
 
+// Create Gites
     public function createGite()
     {
 
@@ -134,6 +132,60 @@ class GitesModels extends Database
         }
     }
 
+// Get more details
+    public function gitDetails()
+    {
+        $db = $this->getPDO();
+        $req = $db->prepare("SELECT * FROM gites INNER JOIN category_gites ON gites.gite_category = category_gites.id_category WHERE gites.id = ? ");
+        $id = $_GET['id'];
+        $req->bindParam(1, $id);
+        $req->execute();
+        $result = $req->fetch();
+        ?>
+        <div class="container mt-5">
+            <h2 class="text-center text-warning"><?= $result['nom_gite'] ?></h2>
+            <h3 class="text-center text-info">Type : <?= $result['type'] ?></h3>
+            <div class="row mt-5">
+                <div class="col-6">
+                    <img width="100%" src="<?= $result['img_gite'] ?>" alt="<?= $result['nom_gite'] ?>"
+                         title="<?= $result['nom_gite'] ?>"/>
+                </div>
+                <div class="col-6">
+                    <p class="card-text"><b>Description : </b></p>
+                    <p><?= $result['description_gite'] ?></p>
+                    <p><b>Nombre de chambre : </b><b class="text-danger"><?= $result['nbr_chambre'] ?></b></p>
+                    <p><b>Nombre de salle de bains : </b><b class="text-danger"><?= $result['nbr_sdb'] ?></b></p>
+                    <p><b>Zone géographique : </b><b class="text-info"><?= $result['zone_geo'] ?></b></p>
+                    <p><b>Prix à la semaine : </b><b class="text-success"><?= $result['prix'] ?> €</b></p>
+
+                    <?php
+
+                    $dispo = $result['disponible'];
+                    if ($dispo == false) {
+                        echo $dispo = "NON";
+                    } else {
+                        echo $dispo = "OUI";
+                    }
+                    ?>
+
+                    <?php
+                    $date_a = new DateTime($result['date_arrivee']);
+                    $date_d = new DateTime($result['date_depart']);
+                    ?>
+                    <p><b>Date d'arrivée : </b></p>
+                    <p class="alert-success p-2"><?= $date_a->format('d-m-Y à H:i:s') ?></p>
+
+                    <p><b>Date de depart : </b></p>
+                    <p class="alert-info p-2"> <?= $date_d->format('d-m-Y à H:i:s') ?></p>
+                    <a href="reservation.php?id=<?= $result['id'] ?>" class="btn btn-outline-info">RESERVER</a>
+                    <a href="index.php" class="btn btn-outline-danger">RETOUR</a>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+// admin dashboard
     public function adminGites()
     {
         $db = $this->getPDO();
@@ -147,9 +199,9 @@ class GitesModels extends Database
                 <?php
                 foreach ($products as $row):
                     ?>
-                    <div class="col-lg-4 d-flex align-items-stretch">
+                    <div class="col-lg-4 d-flex align-items-stretch ">
                         <div class="card mt-3">
-                            <img class="img-fluid" src="<?php echo $row['img_gite'] ?>"
+                            <img class="img-fluid card-img-top" src="<?php echo $row['img_gite'] ?>"
                                  alt="<?php echo $row['nom_gite'] ?>" title="<?php echo $row['nom_gite']; ?>">
                             <h5 class="font-weight-bold mt-3"> Nom : <?php echo $row['nom_gite'] ?></h5>
                             <p class="mt-3 lead"><?php echo $row['description_gite'] ?></p>
@@ -172,38 +224,69 @@ class GitesModels extends Database
 
         <?php
     }
-/*
-    public function Login()
+
+// login
+    public function adminLogin()
     {
         if (isset($_POST['submit'])) {
-
             $email = $_POST['email'];
             $pass = $_POST['password'];
 
+            $login = new GitesModels();
+            $db = $login->getPDO();
 
-        }
+            $sql = "SELECT * FROM admin WHERE email_admin = '$email'";
+            $result = $db->prepare($sql);
+            $result->execute();
 
-        $db = $this->getPDO();
-        $sql = "SELECT * FROM admin WHERE email_admin = '$email' ";
-        $result = $db->prepare($sql);
-        $result->execute();
 
-        if ($result->rowCount() > 0) {
-            $data = $result->fetchAll();
-            if (password_verify($pass, $data[0]["password_admin"])) {
-                echo 'connexion success';
-                $_SESSION['email'] = $email;
-            }
-
+            if ($result->rowCount() > 0) {
+                $data = $result->fetchAll();
+                if (password_verify($pass, $data[0]['password_admin'])) {
+                    echo '<div class="container text-center font-weight-bold alert alert-success mt-5">Connexion effectué</div>';
+                    $_SESSION['email'] = $email;
+                    $_SESSION['connecter'] = true;
+                    header('Location: admin.php');
+                } else {
+                    echo '<div class="container text-center font-weight-bold alert alert-danger mt-5">Erreur email et mot passe pas bon</div>';
+                }
             } else {
                 $pass = password_hash($pass, PASSWORD_DEFAULT);
                 $sql = "INSERT INTO admin (email_admin, password_admin) VALUES ('$email', '$pass')";
                 $req = $db->prepare($sql);
                 $req->execute();
-
-                echo 'You are now registered';
+                echo '<div class="container text-center font-weight-bold alert alert-success mt-5">Enregistrement effectué</div>';
 
             }
+        }
 
-        }*/
+        ?>
+
+        <div class="container mt-5 col-lg-4">
+            <form method="POST" action="">
+                <div class="form-group">
+                    <label for="exampleInputPassword1">Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="Email">
+                </div>
+
+                <div class="form-group">
+                    <label for="exampleInputEmail1">Mot de pass</label>
+                    <input type="password" name="password" class="form-control" placeholder="Mot de pass">
+                </div>
+                <button type="submit" value="connexion" name="submit" class="btn btn-primary">Connexion</button>
+            </form>
+        <?php
     }
+
+// disable gite after reservation
+    public function deactivateGite()
+    {
+
+    }
+
+// Search form
+    public function SearchGites()
+    {
+
+    }
+}

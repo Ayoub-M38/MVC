@@ -1,8 +1,9 @@
 <?php
-
+session_start();
 $email = $_SESSION['email'];
 
 include_once './views/partials/header.php';
+include_once './views/partials/navbar.php';
 require_once './Models/GitesModels.php';
 
 ?>
